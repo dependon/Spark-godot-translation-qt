@@ -50,5 +50,5 @@ CMakeLists.txt.user*
 
 ### build ###
 bin
-
+build/*
 config/config.ini

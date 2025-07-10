@@ -7,6 +7,7 @@
 #include <QSslSocket>
 #include <QSslConfiguration>
 #include <QLibraryInfo>
+#include <QFile>
 #include "appobject.h"
 
 void customMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
@@ -67,18 +68,29 @@ void customMessageHandler(QtMsgType type, const QMessageLogContext &context, con
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    
+
     qInstallMessageHandler(customMessageHandler);
+
     // 设置应用程序信息
     QApplication::setApplicationName("Spark Godot Translation");
     QApplication::setApplicationVersion("1.0.0");
     QApplication::setOrganizationName("Spark Studio");
     QApplication::setOrganizationDomain("spark-studio.com");
 
-
     // 设置UTF-8编码
     QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
-    
+
+    // 加载QSS样式表
+    QFile styleFile(":/styles.qss");
+    if (styleFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream stream(&styleFile);
+        QString styleSheet = stream.readAll();
+        a.setStyleSheet(styleSheet);
+        styleFile.close();
+    } else {
+        qWarning() << u8"警告: 无法加载样式表文件 styles.qss";
+    }
+
     // 创建主窗口
     MainWindow w;
     w.show();
