@@ -1,8 +1,8 @@
 ﻿#include "translationworker.h"
 
 TranslationWorker::TranslationWorker(QObject *parent) : QObject(parent),
-    m_networkManager(new QNetworkAccessManager(this)),
-    m_shouldStop(false)
+    m_shouldStop(false),
+    m_networkManager(new QNetworkAccessManager(this))
 {
     // 检查SSL支持状态
     if (!QSslSocket::supportsSsl()) {

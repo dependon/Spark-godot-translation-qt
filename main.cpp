@@ -10,8 +10,11 @@
 #include <QFile>
 #include "appobject.h"
 
+#define INSTANCE_LOCK_PATH ".spark-godot-translation"
+
 void customMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
+    Q_UNUSED(context)
     QString txt;
     QString timestampS = QDateTime::currentDateTime().toString("yyyy_MM_dd_hh:mm:ss");
     switch (type) {
@@ -58,7 +61,7 @@ void customMessageHandler(QtMsgType type, const QMessageLogContext &context, con
 
     QFileInfoList fileList = logDir.entryInfoList();
     for (QFileInfo fileInfo: fileList) {
-        QDateTime fileTime = fileInfo.created();
+        QDateTime fileTime = fileInfo.birthTime();
         if (fileTime.daysTo(QDateTime::currentDateTime()) > 10) {
             QFile::remove(fileInfo.absoluteFilePath());
         }

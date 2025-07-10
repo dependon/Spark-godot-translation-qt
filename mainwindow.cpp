@@ -295,7 +295,7 @@ void MainWindow::saveCSV(const QString &filePath, const QList<QStringList> &data
             QString escapedField = field;
             if (field.contains(',') || field.contains('"') || field.contains('\n')) {
                 escapedField = '"' + field;
-                escapedField.replace('"', '""');
+                escapedField.replace('"', "\"\"");
                 escapedField += '"';
             }
             escapedRow.append(escapedField);
