@@ -22,6 +22,13 @@ MainWindow::MainWindow(QWidget *parent) :
     setAcceptDrops(true);
     ui->edit_filePath->setAcceptDrops(false); // 禁用LineEdit的拖拽，使用MainWindow的
     connect(AppObject::instance(),&AppObject::sigDebug,this,&MainWindow::onLogMessage);
+    ui->label_github->setTextFormat(Qt::RichText);
+    ui->label_github->setText(u8"<a href='https://github.com/dependon/Spark-godot-translation-qt'>github</a>");
+    ui->label_github->setOpenExternalLinks(true);
+
+    ui->label_bilibili->setTextFormat(Qt::RichText);
+    ui->label_bilibili->setText(u8"<a href='https://space.bilibili.com/144159485'>作者bilibili</a>");
+    ui->label_bilibili->setOpenExternalLinks(true);
 }
 
 MainWindow::~MainWindow()
@@ -72,7 +79,7 @@ void MainWindow::initializeUI()
     m_supportedLanguages["vie"] = u8"越南语";
     
     // 设置窗口标题
-    setWindowTitle(u8"Spark Godot 翻译工具");
+    setWindowTitle(u8"星火Godot 翻译工具");
     
     // 初始化进度条
     ui->progressBar->setValue(0);

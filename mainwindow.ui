@@ -14,7 +14,7 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <layout class="QVBoxLayout" name="verticalLayout_7" stretch="1,0">
+   <layout class="QVBoxLayout" name="verticalLayout_7" stretch="1,0,0,0">
     <item>
      <widget class="QSplitter" name="splitter">
       <property name="orientation">
@@ -406,6 +406,29 @@
        </spacer>
       </item>
      </layout>
+    </item>
+    <item>
+     <widget class="QLabel" name="label_github">
+      <property name="text">
+       <string>https://github.com/dependon/Spark-godot-translation-qt</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+      <property name="textInteractionFlags">
+       <set>Qt::TextBrowserInteraction</set>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="label_bilibili">
+      <property name="text">
+       <string>bilibili</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>

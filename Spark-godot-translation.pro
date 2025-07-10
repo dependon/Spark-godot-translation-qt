@@ -49,3 +49,24 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 RESOURCES += \
     qrc.qrc
+
+# Windows下自动复制SSL库文件到bin目录
+win32 {
+    # 确保bin目录存在
+    !exists($$DESTDIR) {
+        system($$QMAKE_MKDIR $$shell_path($$DESTDIR))
+    }
+    
+    # 使用QMAKE_POST_LINK在每次构建后自动复制SSL库文件
+    QMAKE_POST_LINK += $$QMAKE_COPY $$shell_path($$PWD/ssl/libcrypto-1_1.dll) $$shell_path($$DESTDIR) $$escape_expand(\n\t)
+    QMAKE_POST_LINK += $$QMAKE_COPY $$shell_path($$PWD/ssl/libssl-1_1.dll) $$shell_path($$DESTDIR)
+    
+    # 备选方案：使用INSTALLS机制（需要make install）
+    # SSL_LIBS_SOURCE = $$PWD/ssl
+    # SSL_LIBS_TARGET = $$DESTDIR
+    # libcrypto.path = $$SSL_LIBS_TARGET
+    # libcrypto.files = $$SSL_LIBS_SOURCE/libcrypto-1_1.dll
+    # libssl.path = $$SSL_LIBS_TARGET
+    # libssl.files = $$SSL_LIBS_SOURCE/libssl-1_1.dll
+    # INSTALLS += libcrypto libssl
+}
