@@ -2,6 +2,7 @@
 
 TranslationWorker::TranslationWorker(QObject *parent) : QObject(parent),
     m_shouldStop(false),
+    m_delayTime(100),
     m_networkManager(new QNetworkAccessManager(this))
 {
     // 检查SSL支持状态
@@ -16,8 +17,7 @@ TranslationWorker::TranslationWorker(QObject *parent) : QObject(parent),
     sslConfig.setPeerVerifyMode(QSslSocket::VerifyNone);
     QSslConfiguration::setDefaultConfiguration(sslConfig);
     
-    emit logMessage(QString(u8"TranslationWorker初始化完成，SSL支持: %1")
-                   .arg(QSslSocket::supportsSsl() ? u8"是" : u8"否"));
+    emit logMessage(QString(u8"TranslationWorker初始化完成，SSL支持: %1").arg(QSslSocket::supportsSsl() ? u8"是" : u8"否"));
 }
 
 void TranslationWorker::setConfig(const QString &appId, const QString &secretKey)
@@ -37,6 +37,11 @@ void TranslationWorker::setTranslationData(const QStringList &sourceTexts, const
 void TranslationWorker::setExistingTranslations(const QHash<QString, QHash<int, QString>> &existingTranslations)
 {
     m_existingTranslations = existingTranslations;
+}
+
+void TranslationWorker::setDelayTime(int delayMs)
+{
+    m_delayTime = delayMs;
 }
 
 void TranslationWorker::stopTranslation()
@@ -95,7 +100,7 @@ void TranslationWorker::startTranslation()
             
             // 添加延迟以避免API限制
             QEventLoop loop;
-            QTimer::singleShot(100, &loop, &QEventLoop::quit);
+            QTimer::singleShot(m_delayTime, &loop, &QEventLoop::quit);
             loop.exec();
         }
     }

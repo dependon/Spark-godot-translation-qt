@@ -1,4 +1,4 @@
-﻿#ifndef TRANSLATIONWORKER_H
+#ifndef TRANSLATIONWORKER_H
 #define TRANSLATIONWORKER_H
 
 #include <QObject>
@@ -28,6 +28,7 @@ public:
     void setConfig(const QString &appId, const QString &secretKey);
     void setTranslationData(const QStringList &sourceTexts, const QString &fromLang, const QStringList &targetLangs, bool forceRetranslate);
     void setExistingTranslations(const QHash<QString, QHash<int, QString>> &existingTranslations);
+    void setDelayTime(int delayMs);
     void stopTranslation();
 
 public slots:
@@ -51,6 +52,7 @@ private:
     QStringList m_targetLangs;
     bool m_forceRetranslate;
     bool m_shouldStop;
+    int m_delayTime = 50;
     QMutex m_mutex;
     QNetworkAccessManager *m_networkManager;
     QHash<QString, QString> m_translationCache;

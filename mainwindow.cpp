@@ -111,6 +111,10 @@ void MainWindow::loadSettings()
         ui->edit_filePath->setText(lastFilePath);
         loadCSVFile(lastFilePath);
     }
+    
+    // 加载延迟时间设置
+    int delayTime = m_settings->value("settings/delayTime", 100).toInt();
+    ui->edit_delay->setText(QString::number(delayTime));
 }
 
 void MainWindow::saveSettings()
@@ -127,6 +131,12 @@ void MainWindow::saveSettings()
     
     // 保存文件路径
     m_settings->setValue("file/lastPath", ui->edit_filePath->text());
+    
+    // 保存延迟时间设置
+    if(ui->edit_delay->text().toInt() > 0)
+    {
+        m_settings->setValue("settings/delayTime", ui->edit_delay->text().toInt());
+    }
     
     m_settings->sync();
 }
@@ -474,6 +484,10 @@ void MainWindow::on_btn_start_clicked()
     m_translationWorker->setTranslationData(sourceTexts, "auto", targetLangs, ui->checkbox_tsed->isChecked());
     m_translationWorker->setExistingTranslations(existingTranslations);
     
+    // 设置延迟时间
+    int delayTime = m_settings->value("settings/delayTime", 50).toInt();
+    m_translationWorker->setDelayTime(delayTime);
+    
     // 连接信号
     connect(m_translationThread, &QThread::started, m_translationWorker, &TranslationWorker::startTranslation);
     connect(m_translationWorker, &TranslationWorker::progressUpdated, this, &MainWindow::onTranslationProgress);
@@ -623,4 +637,31 @@ void MainWindow::on_btn_saveCsv_clicked()
         addLogMessage(u8"保存CSV文件失败: " + QString::fromStdString(e.what()));
         QMessageBox::warning(this, u8"保存失败", u8"保存CSV文件失败: " + QString::fromStdString(e.what()));
     }
+}
+
+void MainWindow::on_btn_setDelay_clicked()
+{
+    QString delayText = ui->edit_delay->text().trimmed();
+    
+    // 检查输入是否为空
+    if (delayText.isEmpty()) {
+        QMessageBox::warning(this, u8"警告", u8"请输入延迟时间");
+        return;
+    }
+    
+    // 检查输入是否为正整数
+    bool ok;
+    int delayTime = delayText.toInt(&ok);
+    
+    if (!ok || delayTime <= 0) {
+        QMessageBox::warning(this, u8"警告", u8"延迟时间必须是正整数（毫秒）");
+        return;
+    }
+    
+    // 保存设置到配置文件
+    saveSettings();
+    
+    // 显示成功消息
+    QMessageBox::information(this, u8"成功", QString(u8"延迟时间已设置为 %1 毫秒").arg(delayTime));
+    addLogMessage(QString(u8"翻译延迟时间已设置为: %1 毫秒").arg(delayTime));
 }

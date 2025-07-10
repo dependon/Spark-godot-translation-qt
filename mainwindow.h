@@ -89,6 +89,9 @@ private slots:
     // 隐藏/显示API Key
     void on_checkBox_keyHide_stateChanged(int state);
 
+    // 设置翻译延迟时间
+    void on_btn_setDelay_clicked();
+
 private:
 
     void initializeUI();
