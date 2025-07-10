@@ -1,0 +1,125 @@
+name: Build
+
+on:
+  push:
+    branches: [ main, master ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            qt-arch: win32_msvc2019
+            artifact-name: Spark-godot-translation-windows
+            executable: Spark-godot-translation.exe
+          - os: ubuntu-latest
+            qt-arch: gcc_64
+            artifact-name: Spark-godot-translation-linux
+            executable: Spark-godot-translation
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: 5.15.2
+        cache: true
+        arch: ${{ matrix.qt-arch || 'default' }}
+        
+    - name: Setup MSVC (Windows)
+      if: runner.os == 'Windows'
+      uses: microsoft/setup-msbuild@v1
+      
+    - name: Setup MSVC environment (Windows)
+      if: runner.os == 'Windows'
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x86
+        
+    - name: Install dependencies (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential libgl1-mesa-dev libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xinput0 libxcb-xfixes0
+        
+    - name: Build project (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        qmake Spark-godot-translation.pro CONFIG+=release
+        nmake
+        
+    - name: Build project (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        qmake Spark-godot-translation.pro CONFIG+=release
+        make -j$(nproc)
+        
+    - name: Package artifacts (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        mkdir package
+        copy bin\${{ matrix.executable }} package\
+        copy ssl\*.dll package\
+        windeployqt package\${{ matrix.executable }}
+        
+    - name: Package artifacts (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        mkdir package
+        cp bin/${{ matrix.executable }} package/
+        
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact-name }}
+        path: package/
+        
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download Windows artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: Spark-godot-translation-windows
+        path: windows-package/
+        
+    - name: Download Linux artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: Spark-godot-translation-linux
+        path: linux-package/
+        
+    - name: Create Windows archive
+      run: |
+        cd windows-package
+        zip -r ../Spark-godot-translation-windows.zip .
+        
+    - name: Create Linux archive
+      run: |
+        cd linux-package
+        tar -czf ../Spark-godot-translation-linux.tar.gz .
+        
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          Spark-godot-translation-windows.zip
+          Spark-godot-translation-linux.tar.gz
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
