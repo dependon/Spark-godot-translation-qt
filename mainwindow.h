@@ -79,6 +79,7 @@ private slots:
     void onTranslationFinished();
     void onTranslationError(const QString &error);
     void onLogMessage(const QString &message);
+    void updatePreviewTable();
 
     //输出当前翻译过的内容
     void on_btn_saveCsv_clicked();
@@ -91,6 +92,9 @@ private slots:
 
     // 设置翻译延迟时间
     void on_btn_setDelay_clicked();
+    
+    // 预览界面写入按钮
+    void on_btn_previewWrite_clicked();
 
 private:
 

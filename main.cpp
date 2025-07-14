@@ -8,6 +8,7 @@
 #include <QSslConfiguration>
 #include <QLibraryInfo>
 #include <QFile>
+#include <QIcon> // 添加QIcon头文件
 #include "appobject.h"
 
 #define INSTANCE_LOCK_PATH ".spark-godot-translation"
@@ -71,8 +72,9 @@ void customMessageHandler(QtMsgType type, const QMessageLogContext &context, con
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-
-    qInstallMessageHandler(customMessageHandler);
+ 
+     qInstallMessageHandler(customMessageHandler);
+     a.setWindowIcon(QIcon(":/icon.png")); // 设置应用程序图标
 
     // 设置应用程序信息
     QApplication::setApplicationName("Spark Godot Translation");

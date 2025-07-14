@@ -87,6 +87,8 @@ void MainWindow::initializeUI()
     
     // 设置按钮初始状态
     ui->btn_stop->setEnabled(false);
+
+    ui->tabWidget->setCurrentIndex(0);
 }
 
 void MainWindow::loadSettings()
@@ -197,6 +199,7 @@ void MainWindow::loadCSVFile(const QString &filePath)
         if (!m_csvData.isEmpty()) {
             m_csvHeaders = m_csvData.first();
             updateSourceLanguageCombo();
+            updatePreviewTable();
             addLogMessage(QString(u8"成功加载CSV文件: %1 行数据").arg(m_csvData.size() - 1));
         }
     } catch (const std::exception &e) {
@@ -545,6 +548,8 @@ void MainWindow::onTranslationProgress(int current, int total, const QString &cu
     int dataRowIndex = ((current - 1) % (m_csvData.size() - 1)) + 1;
     if (dataRowIndex < m_csvData.size() && targetColumnIndex < m_csvData[dataRowIndex].size()) {
         m_csvData[dataRowIndex][targetColumnIndex] = translatedText;
+        // 更新预览表格显示
+        updatePreviewTable();
     }
 }
 
@@ -553,6 +558,9 @@ void MainWindow::onTranslationFinished()
     resetTranslationButtons();
     ui->progressBar->setValue(100);
     addLogMessage(u8"翻译完成！");
+    
+    // 更新预览表格显示最终结果
+    updatePreviewTable();
     
     // 保存翻译结果
     QString originalFilePath = ui->edit_filePath->text();
@@ -593,6 +601,65 @@ void MainWindow::onTranslationError(const QString &error)
 void MainWindow::onLogMessage(const QString &message)
 {
     addLogMessage(message);
+}
+
+void MainWindow::updatePreviewTable()
+{
+    if (m_csvData.isEmpty()) {
+        ui->table_previewData->clear();
+        ui->table_previewData->setRowCount(0);
+        ui->table_previewData->setColumnCount(0);
+        return;
+    }
+    
+    // 设置表格行数和列数
+    ui->table_previewData->setRowCount(m_csvData.size());
+    ui->table_previewData->setColumnCount(m_csvHeaders.size());
+    
+    // 启用行间颜色交替
+    ui->table_previewData->setAlternatingRowColors(true);
+    
+    // 设置表头 - 将语言代码转换为中文显示
+    QStringList chineseHeaders;
+    for (const QString &header : m_csvHeaders) {
+        // 检查是否为支持的语言代码，如果是则显示中文名称
+        if (m_supportedLanguages.contains(header)) {
+            chineseHeaders.append(m_supportedLanguages[header]);
+        } else {
+            chineseHeaders.append(header);
+        }
+    }
+    ui->table_previewData->setHorizontalHeaderLabels(chineseHeaders);
+    
+    // 填充数据
+    for (int row = 0; row < m_csvData.size(); ++row) {
+        const QStringList &rowData = m_csvData[row];
+        for (int col = 0; col < m_csvHeaders.size(); ++col) {
+            QString cellText = (col < rowData.size()) ? rowData[col] : "";
+            QTableWidgetItem *item = new QTableWidgetItem(cellText);
+            
+            // 第一行（标题行）设置为只读并加粗
+            if (row == 0) {
+                QFont font = item->font();
+                font.setBold(true);
+                item->setFont(font);
+                item->setFlags(item->flags() & ~Qt::ItemIsEditable);
+                item->setBackground(QColor(240, 240, 240));
+            }
+            
+            ui->table_previewData->setItem(row, col, item);
+        }
+    }
+    
+    // 自动调整列宽
+    ui->table_previewData->resizeColumnsToContents();
+    
+    // 限制最大列宽，避免过宽
+    for (int col = 0; col < ui->table_previewData->columnCount(); ++col) {
+        if (ui->table_previewData->columnWidth(col) > 300) {
+            ui->table_previewData->setColumnWidth(col, 300);
+        }
+    }
 }
 
 
@@ -664,4 +731,85 @@ void MainWindow::on_btn_setDelay_clicked()
     // 显示成功消息
     QMessageBox::information(this, u8"成功", QString(u8"延迟时间已设置为 %1 毫秒").arg(delayTime));
     addLogMessage(QString(u8"翻译延迟时间已设置为: %1 毫秒").arg(delayTime));
+}
+
+void MainWindow::on_btn_previewWrite_clicked()
+{
+    if (ui->table_previewData->rowCount() == 0 || ui->table_previewData->columnCount() == 0) {
+        QMessageBox::warning(this, u8"警告", u8"预览表格为空，无法写入数据");
+        return;
+    }
+    
+    // 确认对话框
+    int ret = QMessageBox::question(this, u8"确认写入", 
+                                   u8"确定要将预览表格中的数据保存到新的CSV文件吗？",
+                                   QMessageBox::Yes | QMessageBox::No,
+                                   QMessageBox::No);
+    
+    if (ret != QMessageBox::Yes) {
+        return;
+    }
+    
+    // 选择保存文件路径
+    QString defaultFileName = ui->edit_filePath->text();
+    QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss");
+    if (defaultFileName.isEmpty()) {
+        defaultFileName = QString(u8"preview_data_%1.csv").arg(timestamp);
+    } else {
+        QFileInfo fileInfo(defaultFileName);
+        QString baseName = fileInfo.completeBaseName();
+        QString path = fileInfo.path();
+        defaultFileName = QString("%1/%2_preview_%3.csv").arg(path, baseName, timestamp);
+    }
+    
+    QString saveFilePath = QFileDialog::getSaveFileName(this, u8"保存预览数据到CSV文件", defaultFileName, u8"CSV文件 (*.csv)");
+    if (saveFilePath.isEmpty()) {
+        return;
+    }
+    
+    try {
+        // 构建要保存的CSV数据
+        QList<QStringList> saveData;
+        
+        // 使用原始的CSV表头（语言代码），而不是显示的中文名称
+        QStringList csvHeaders;
+        for (int col = 0; col < ui->table_previewData->columnCount(); ++col) {
+            if (col < m_csvHeaders.size()) {
+                csvHeaders.append(m_csvHeaders[col]);
+            } else {
+                csvHeaders.append(QString("Column_%1").arg(col + 1));
+            }
+        }
+        
+        // 添加表头作为第一行
+        saveData.append(csvHeaders);
+        
+        // 构建数据行（跳过第一行，因为第一行是表头数据）
+        for (int row = 1; row < ui->table_previewData->rowCount(); ++row) {
+            QStringList rowData;
+            for (int col = 0; col < ui->table_previewData->columnCount(); ++col) {
+                QTableWidgetItem *item = ui->table_previewData->item(row, col);
+                QString cellText = item ? item->text() : "";
+                rowData.append(cellText);
+            }
+            saveData.append(rowData);
+        }
+        
+        // 更新内部数据结构
+        m_csvData.clear();
+        m_csvData = saveData;
+        
+        // 保存到CSV文件
+        saveCSV(saveFilePath, saveData);
+        
+        // 更新源语言下拉框
+        updateSourceLanguageCombo();
+        
+        addLogMessage(u8"预览表格数据已成功保存到CSV文件: " + saveFilePath);
+        QMessageBox::information(this, u8"保存成功", u8"预览表格数据已成功保存到CSV文件！");
+        
+    } catch (const std::exception &e) {
+        addLogMessage(u8"保存CSV文件失败: " + QString::fromStdString(e.what()));
+        QMessageBox::warning(this, u8"保存失败", u8"保存CSV文件失败: " + QString::fromStdString(e.what()));
+    }
 }
