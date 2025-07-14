@@ -69,4 +69,6 @@ win32 {
     # libssl.path = $$SSL_LIBS_TARGET
     # libssl.files = $$SSL_LIBS_SOURCE/libssl-1_1.dll
     # INSTALLS += libcrypto libssl
+
+    RC_ICONS += icon_1.ico
 }
